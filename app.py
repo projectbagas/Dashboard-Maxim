@@ -1,15 +1,18 @@
+# =========================
+# IMPORT
+# =========================
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 # =========================
-# CEK XGBOOST (AMAN CLOUD)
+# CEK XGBOOST (AMAN)
 # =========================
 try:
     from xgboost import XGBClassifier
@@ -29,44 +32,32 @@ st.title("📊 Dashboard Analisis Kepuasan Pengguna Aplikasi Maxim")
 st.caption("Perbandingan Algoritma Random Forest dan XGBoost")
 
 # =========================
-# LOAD DATA (SUPER AMAN)
+# LOAD DATA (TERKUNCI)
 # =========================
 df = pd.read_csv("maxim_siap_pakai.csv")
 
 TEXT_COL = df.columns[0]
 LABEL_COL = df.columns[1]
 
-df = df[[TEXT_COL, LABEL_COL]].dropna()
-df[TEXT_COL] = df[TEXT_COL].astype(str)
+df = df.dropna(subset=[TEXT_COL, LABEL_COL])
 
 # =========================
-# LABEL ENCODING (KHUSUS XGBOOST)
+# TF-IDF
 # =========================
+vectorizer = TfidfVectorizer(max_features=3000)
+X = vectorizer.fit_transform(df[TEXT_COL].astype(str))
+
+# =========================
+# LABEL
+# =========================
+y = df[LABEL_COL]
+
 label_encoder = LabelEncoder()
 y_encoded = label_encoder.fit_transform(y)
 
-
 # =========================
-# SIDEBAR
+# SPLIT DATA (AMAN)
 # =========================
-menu = st.sidebar.radio(
-    "Pilih Halaman",
-    (
-        "Overview Dataset",
-        "Distribusi Sentimen",
-        "Random Forest",
-        "XGBoost",
-        "Perbandingan & Kesimpulan"
-    )
-)
-
-# =========================
-# TF-IDF & SPLIT (DIKUNCI)
-# =========================
-vectorizer = TfidfVectorizer(max_features=3000)
-X = vectorizer.fit_transform(df[TEXT_COL])
-y = df[LABEL_COL]
-
 X_train, X_test, y_train, y_test, y_train_enc, y_test_enc = train_test_split(
     X,
     y,
@@ -74,7 +65,20 @@ X_train, X_test, y_train, y_test, y_train_enc, y_test_enc = train_test_split(
     test_size=0.2,
     random_state=42,
     stratify=y
+)
 
+# =========================
+# SIDEBAR
+# =========================
+menu = st.sidebar.radio(
+    "Pilih Halaman",
+    [
+        "Overview Dataset",
+        "Distribusi Sentimen",
+        "Random Forest",
+        "XGBoost",
+        "Perbandingan & Kesimpulan"
+    ]
 )
 
 # =========================
@@ -101,17 +105,16 @@ if menu == "Overview Dataset":
     st.subheader("📌 Deskripsi Dataset")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Ulasan", df.shape[0])
+    col1.metric("Total Ulasan", len(df))
     col2.metric("Jumlah Kelas Sentimen", y.nunique())
     col3.metric("Data Training", X_train.shape[0])
 
-    st.dataframe(df.head())
+    st.dataframe(df[[TEXT_COL, LABEL_COL]].head())
 
     st.markdown("""
     **Bab IV.1 – Deskripsi Dataset**  
-    Dataset yang digunakan merupakan ulasan pengguna aplikasi Maxim
-    yang telah dilabeli berdasarkan tingkat kepuasan pengguna.
-    Dataset ini digunakan pada tahap pelatihan dan pengujian model klasifikasi.
+    Dataset merupakan ulasan pengguna aplikasi Maxim yang telah diberi label
+    sentimen untuk mengukur tingkat kepuasan pengguna.
     """)
 
 # =========================
@@ -129,8 +132,8 @@ elif menu == "Distribusi Sentimen":
 
     st.markdown("""
     **Bab IV.2 – Distribusi Sentimen**  
-    Grafik menunjukkan persebaran sentimen pengguna aplikasi Maxim
-    berdasarkan ulasan pada Google Play Store.
+    Grafik menunjukkan persebaran sentimen pengguna berdasarkan ulasan
+    pada Google Play Store.
     """)
 
 # =========================
@@ -144,18 +147,18 @@ elif menu == "Random Forest":
         random_state=42
     )
     rf.fit(X_train, y_train)
-    y_pred = rf.predict(X_test)
+    y_rf = rf.predict(X_test)
 
-    acc = accuracy_score(y_test, y_pred)
+    acc_rf = accuracy_score(y_test, y_rf)
 
-    st.metric("Accuracy", f"{acc*100:.2f}%")
-    st.pyplot(plot_cm(y_test, y_pred, "Confusion Matrix Random Forest"))
-    st.text(classification_report(y_test, y_pred))
+    st.metric("Accuracy", f"{acc_rf*100:.2f}%")
+    st.pyplot(plot_cm(y_test, y_rf, "Confusion Matrix Random Forest"))
+    st.text(classification_report(y_test, y_rf))
 
     st.markdown("""
     **Bab IV.3 – Evaluasi Random Forest**  
-    Model Random Forest mampu mengklasifikasikan sentimen pengguna
-    dengan performa yang stabil berdasarkan hasil pengujian.
+    Random Forest mampu mengklasifikasikan sentimen pengguna dengan
+    performa yang stabil dan cukup baik.
     """)
 
 # =========================
@@ -165,7 +168,7 @@ elif menu == "XGBoost":
     st.subheader("⚡ Evaluasi XGBoost")
 
     if not XGB_AVAILABLE:
-        st.warning("XGBoost tidak tersedia pada environment ini.")
+        st.warning("XGBoost tidak tersedia di environment ini.")
     else:
         xgb = XGBClassifier(
             n_estimators=300,
@@ -174,21 +177,20 @@ elif menu == "XGBoost":
             eval_metric="mlogloss"
         )
         xgb.fit(X_train, y_train_enc)
+
         y_pred_enc = xgb.predict(X_test)
         y_pred = label_encoder.inverse_transform(y_pred_enc)
 
-        y_pred = xgb.predict(X_test)
+        acc_xgb = accuracy_score(y_test, y_pred)
 
-        acc = accuracy_score(y_test, y_pred)
-
-        st.metric("Accuracy", f"{acc*100:.2f}%")
+        st.metric("Accuracy", f"{acc_xgb*100:.2f}%")
         st.pyplot(plot_cm(y_test, y_pred, "Confusion Matrix XGBoost"))
         st.text(classification_report(y_test, y_pred))
 
         st.markdown("""
         **Bab IV.4 – Evaluasi XGBoost**  
-        Algoritma XGBoost menunjukkan performa yang lebih unggul
-        dalam mengklasifikasikan tingkat kepuasan pengguna.
+        XGBoost menunjukkan performa yang lebih tinggi karena
+        mampu memperbaiki kesalahan klasifikasi secara iteratif.
         """)
 
 # =========================
@@ -199,12 +201,10 @@ elif menu == "Perbandingan & Kesimpulan":
 
     rf = RandomForestClassifier(n_estimators=200, random_state=42)
     rf.fit(X_train, y_train)
-    acc_rf = accuracy_score(y_test, rf.predict(X_test)) * 100
+    acc_rf = accuracy_score(y_test, rf.predict(X_test))
 
-    data = {
-        "Model": ["Random Forest"],
-        "Accuracy (%)": [acc_rf]
-    }
+    models = ["Random Forest"]
+    accs = [acc_rf * 100]
 
     if XGB_AVAILABLE:
         xgb = XGBClassifier(
@@ -213,18 +213,25 @@ elif menu == "Perbandingan & Kesimpulan":
             max_depth=6,
             eval_metric="mlogloss"
         )
-        xgb.fit(X_train, y_train)
-        acc_xgb = accuracy_score(y_test, xgb.predict(X_test)) * 100
+        xgb.fit(X_train, y_train_enc)
+        acc_xgb = accuracy_score(
+            y_test,
+            label_encoder.inverse_transform(xgb.predict(X_test))
+        )
+        models.append("XGBoost")
+        accs.append(acc_xgb * 100)
 
-        data["Model"].append("XGBoost")
-        data["Accuracy (%)"].append(acc_xgb)
+    result_df = pd.DataFrame({
+        "Model": models,
+        "Accuracy (%)": accs
+    })
 
-    st.dataframe(pd.DataFrame(data))
+    st.dataframe(result_df, use_container_width=True)
 
     st.markdown("""
     **Bab IV.5 – Kesimpulan**  
-    Berdasarkan hasil pengujian, algoritma XGBoost memperoleh nilai akurasi
-    yang lebih tinggi dibandingkan Random Forest.
-    Oleh karena itu, XGBoost dinilai lebih efektif
-    dalam mengklasifikasikan tingkat kepuasan pengguna aplikasi Maxim.
+    Berdasarkan hasil pengujian, algoritma XGBoost menghasilkan nilai akurasi
+    yang lebih tinggi dibandingkan Random Forest,
+    sehingga lebih efektif dalam mengklasifikasikan tingkat kepuasan
+    pengguna aplikasi Maxim.
     """)
