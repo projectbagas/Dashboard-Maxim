@@ -90,7 +90,7 @@ if menu == "Overview Dataset":
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Ulasan", len(df))
     col2.metric("Jumlah Kelas Sentimen", y.nunique())
-    col3.metric("Data Training", len(X_train))
+   col3.metric("Data Training", X_train.shape[0])
 
     st.dataframe(df[[TEXT_COL, LABEL_COL]].head())
 
