@@ -1,4 +1,21 @@
 import streamlit as st
+st.write("APP STARTED")
+
+try:
+    st.write("vectorizer:", vectorizer)
+except:
+    st.write("vectorizer BELUM ADA")
+
+try:
+    st.write("X_train shape:", X_train.shape)
+except:
+    st.write("X_train BELUM ADA")
+
+try:
+    st.write("menu:", menu)
+except:
+    st.write("menu BELUM ADA")
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
