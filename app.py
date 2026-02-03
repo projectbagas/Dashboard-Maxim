@@ -98,4 +98,15 @@ X_train, X_test, y_train, y_test = train_test_split(
 # RANDOM FOREST (≈ 86%)
 # =========================
 rf_model = RandomForestClassifier(
+    n_estimators=350,
+    max_depth=22,
+    min_samples_split=5,
+    min_samples_leaf=2,
+    random_state=42
+)
+
+# =========================
+# RANDOM FOREST (≈ 86%)
+# =========================
+rf_model = RandomForestClassifier(
     n_est_
