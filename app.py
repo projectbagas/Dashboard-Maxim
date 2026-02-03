@@ -63,25 +63,19 @@ menu = st.sidebar.radio(
     ]
 )
 
-# =========================
-# TF-IDF & SPLIT DATA
-# =========================
-vectorizer = TfidfVectorizer(
-    max_features=4000,
-    min_df=3,
-    ngram_range=(1, 2)
-)
-
+# TF-IDF
 X = vectorizer.fit_transform(df[TEXT_COL])
-y = df["sentimen_encoded"]
+
+# LABEL (TANPA ENCODING)
+y = df[LABEL_COL]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.25,
+    X, y,
+    test_size=0.2,
     random_state=42,
     stratify=y
 )
+
 
 # =========================
 # FUNGSI BANTU
