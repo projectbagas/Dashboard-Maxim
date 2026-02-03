@@ -30,7 +30,7 @@ st.caption("Perbandingan Algoritma Random Forest dan XGBoost")
 # =========================
 # LOAD DATA
 # =========================
-df = pd.read_csv("maxim_reviews_labeled.csv")
+df = pd.read_csv("maxim_siap_pakai.csv")
 
 TEXT_COL = "content"
 LABEL_COL = "sentimen"
