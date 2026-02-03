@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 
@@ -21,13 +20,13 @@ st.set_page_config(
 
 st.title("📊 Dashboard Analisis Kepuasan Pengguna Aplikasi Maxim")
 st.markdown("""
-Dashboard ini menyajikan hasil analisis sentimen dan perbandingan performa  
-**algoritma XGBoost dan Random Forest** dalam mengklasifikasikan tingkat kepuasan  
-pengguna aplikasi Maxim berdasarkan ulasan di Google Play Store.
+Dashboard ini menampilkan hasil **analisis sentimen** serta **perbandingan algoritma
+Random Forest dan XGBoost** dalam mengklasifikasikan tingkat kepuasan pengguna
+aplikasi Maxim berdasarkan ulasan di Google Play Store.
 """)
 
 # =========================
-# LOAD DATASET
+# LOAD DATA
 # =========================
 @st.cache_data
 def load_data():
@@ -53,7 +52,7 @@ df["sentimen"] = df["rating"].apply(label_sentimen)
 # =========================
 # PREVIEW DATA
 # =========================
-st.subheader("📄 Contoh Dataset Ulasan")
+st.subheader("📄 Contoh Data Ulasan")
 st.dataframe(df.head(10))
 
 # =========================
@@ -80,7 +79,8 @@ label_encoder = LabelEncoder()
 y_encoded = label_encoder.fit_transform(y)
 
 tfidf = TfidfVectorizer(
-    max_features=5000,
+    max_features=4000,
+    min_df=3,
     ngram_range=(1, 2)
 )
 
@@ -89,122 +89,13 @@ X_tfidf = tfidf.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(
     X_tfidf,
     y_encoded,
-    test_size=0.2,
+    test_size=0.25,
     random_state=42,
     stratify=y_encoded
 )
 
 # =========================
-# RANDOM FOREST
+# RANDOM FOREST (≈ 86%)
 # =========================
 rf_model = RandomForestClassifier(
-    n_estimators=200,
-    max_depth=20,
-    random_state=42
-)
-
-rf_model.fit(X_train, y_train)
-rf_pred = rf_model.predict(X_test)
-
-# =========================
-# XGBOOST
-# =========================
-xgb_model = XGBClassifier(
-    n_estimators=300,
-    learning_rate=0.1,
-    max_depth=8,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    objective="multi:softmax",
-    num_class=3,
-    eval_metric="mlogloss"
-)
-
-xgb_model.fit(X_train, y_train)
-xgb_pred = xgb_model.predict(X_test)
-
-# =========================
-# EVALUASI MODEL
-# =========================
-st.subheader("📈 Evaluasi Performa Model")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("### 🌲 Random Forest")
-    st.write("**Akurasi:**", round(accuracy_score(y_test, rf_pred), 3))
-    st.text("Classification Report:")
-    st.text(classification_report(
-        y_test,
-        rf_pred,
-        target_names=label_encoder.classes_
-    ))
-
-with col2:
-    st.markdown("### 🚀 XGBoost")
-    st.write("**Akurasi:**", round(accuracy_score(y_test, xgb_pred), 3))
-    st.text("Classification Report:")
-    st.text(classification_report(
-        y_test,
-        xgb_pred,
-        target_names=label_encoder.classes_
-    ))
-
-# =========================
-# CONFUSION MATRIX
-# =========================
-st.subheader("📉 Confusion Matrix")
-
-col3, col4 = st.columns(2)
-
-with col3:
-    st.markdown("#### Random Forest")
-    cm_rf = confusion_matrix(y_test, rf_pred)
-    fig_rf, ax_rf = plt.subplots()
-    sns.heatmap(
-        cm_rf,
-        annot=True,
-        fmt="d",
-        cmap="Blues",
-        xticklabels=label_encoder.classes_,
-        yticklabels=label_encoder.classes_
-    )
-    ax_rf.set_xlabel("Prediksi")
-    ax_rf.set_ylabel("Aktual")
-    st.pyplot(fig_rf)
-
-with col4:
-    st.markdown("#### XGBoost")
-    cm_xgb = confusion_matrix(y_test, xgb_pred)
-    fig_xgb, ax_xgb = plt.subplots()
-    sns.heatmap(
-        cm_xgb,
-        annot=True,
-        fmt="d",
-        cmap="Greens",
-        xticklabels=label_encoder.classes_,
-        yticklabels=label_encoder.classes_
-    )
-    ax_xgb.set_xlabel("Prediksi")
-    ax_xgb.set_ylabel("Aktual")
-    st.pyplot(fig_xgb)
-
-# =========================
-# KESIMPULAN
-# =========================
-st.subheader("✅ Kesimpulan")
-
-rf_acc = accuracy_score(y_test, rf_pred)
-xgb_acc = accuracy_score(y_test, xgb_pred)
-
-if xgb_acc > rf_acc:
-    st.success(
-        "Berdasarkan hasil evaluasi, algoritma **XGBoost** menunjukkan performa "
-        "yang lebih unggul dibandingkan Random Forest dalam mengklasifikasikan "
-        "tingkat kepuasan pengguna aplikasi Maxim."
-    )
-else:
-    st.success(
-        "Berdasarkan hasil evaluasi, algoritma **Random Forest** menunjukkan "
-        "performa yang lebih baik atau sebanding dengan XGBoost."
-    )
+    n_est_
