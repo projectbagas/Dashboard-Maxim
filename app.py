@@ -6,15 +6,14 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
+from xgboost import XGBClassifier
+
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
     accuracy_score,
     precision_recall_fscore_support
 )
-
-from xgboost import XGBClassifier
 
 # =========================
 # KONFIGURASI HALAMAN
@@ -32,7 +31,9 @@ st.caption("Perbandingan Algoritma Random Forest dan XGBoost")
 # =========================
 df = pd.read_csv("maxim_siap_pakai.csv")
 
-# --- AUTO DETECT KOLOM ---
+# =========================
+# AUTO DETECT KOLOM
+# =========================
 TEXT_COL = None
 LABEL_COL = None
 
@@ -42,12 +43,13 @@ for col in df.columns:
     if df[col].dtype != "object" and LABEL_COL is None:
         LABEL_COL = col
 
-st.write("Kolom teks digunakan:", TEXT_COL)
-st.write("Kolom label digunakan:", LABEL_COL)
+# Validasi kolom
+if TEXT_COL is None or LABEL_COL is None:
+    st.error("Kolom teks atau label tidak ditemukan pada dataset.")
+    st.stop()
 
-# pastikan tidak ada nilai kosong
+# Bersihkan data kosong
 df = df.dropna(subset=[TEXT_COL, LABEL_COL])
-
 
 # =========================
 # SIDEBAR MENU
@@ -63,10 +65,15 @@ menu = st.sidebar.radio(
     ]
 )
 
-# TF-IDF
-X = vectorizer.fit_transform(df[TEXT_COL])
+# =========================
+# TF-IDF & SPLIT DATA
+# =========================
+vectorizer = TfidfVectorizer(
+    max_features=5000,
+    stop_words="english"
+)
 
-# LABEL (TANPA ENCODING)
+X = vectorizer.fit_transform(df[TEXT_COL])
 y = df[LABEL_COL]
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -76,9 +83,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
-
 # =========================
 # FUNGSI BANTU
 # =========================
-def plot_confusion_matrix(y_true, y_pred, title):
-    cm = confusion_matrix(y_true, y_pred)
+def plot_confusion_ma
