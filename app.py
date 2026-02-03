@@ -32,13 +32,22 @@ st.caption("Perbandingan Algoritma Random Forest dan XGBoost")
 # =========================
 df = pd.read_csv("maxim_siap_pakai.csv")
 
-TEXT_COL = "ulasan"
-LABEL_COL = "score"
+# --- AUTO DETECT KOLOM ---
+TEXT_COL = None
+LABEL_COL = None
 
-# =========================
-# ENCODE LABEL (WAJIB UNTUK XGBOOST)
-# =========================
-label_encoder = LabelEncoder()
+for col in df.columns:
+    if df[col].dtype == "object" and TEXT_COL is None:
+        TEXT_COL = col
+    if df[col].dtype != "object" and LABEL_COL is None:
+        LABEL_COL = col
+
+st.write("Kolom teks digunakan:", TEXT_COL)
+st.write("Kolom label digunakan:", LABEL_COL)
+
+# pastikan tidak ada nilai kosong
+df = df.dropna(subset=[TEXT_COL, LABEL_COL])
+
 
 # =========================
 # SIDEBAR MENU
