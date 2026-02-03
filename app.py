@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -39,6 +40,13 @@ df = df[[TEXT_COL, LABEL_COL]].dropna()
 df[TEXT_COL] = df[TEXT_COL].astype(str)
 
 # =========================
+# LABEL ENCODING (KHUSUS XGBOOST)
+# =========================
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y)
+
+
+# =========================
 # SIDEBAR
 # =========================
 menu = st.sidebar.radio(
@@ -59,12 +67,14 @@ vectorizer = TfidfVectorizer(max_features=3000)
 X = vectorizer.fit_transform(df[TEXT_COL])
 y = df[LABEL_COL]
 
-X_train, X_test, y_train, y_test = train_test_split(
+X_train, X_test, y_train, y_test, y_train_enc, y_test_enc = train_test_split(
     X,
     y,
+    y_encoded,
     test_size=0.2,
     random_state=42,
     stratify=y
+
 )
 
 # =========================
@@ -163,7 +173,10 @@ elif menu == "XGBoost":
             max_depth=6,
             eval_metric="mlogloss"
         )
-        xgb.fit(X_train, y_train)
+        xgb.fit(X_train, y_train_enc)
+        y_pred_enc = xgb.predict(X_test)
+        y_pred = label_encoder.inverse_transform(y_pred_enc)
+
         y_pred = xgb.predict(X_test)
 
         acc = accuracy_score(y_test, y_pred)
