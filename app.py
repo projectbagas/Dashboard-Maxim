@@ -33,13 +33,12 @@ st.caption("Perbandingan Algoritma Random Forest dan XGBoost")
 df = pd.read_csv("maxim_siap_pakai.csv")
 
 TEXT_COL = "content"
-LABEL_COL = "sentimen"
+LABEL_COL = "score"
 
 # =========================
 # ENCODE LABEL (WAJIB UNTUK XGBOOST)
 # =========================
 label_encoder = LabelEncoder()
-df["sentimen_encoded"] = label_encoder.fit_transform(df[LABEL_COL])
 
 # =========================
 # SIDEBAR MENU
